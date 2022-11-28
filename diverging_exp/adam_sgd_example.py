@@ -3,6 +3,9 @@ import os
 import random
 import numpy as np
 import torch
+import matplotlib.pyplot as plt
+
+import argparse
 
 def set_seed(seed=2021):
     random.seed(seed)
@@ -11,10 +14,18 @@ def set_seed(seed=2021):
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
 
-def main():
+def main(args):
 
-    set_seed(42)
-    w = torch.randn((2, ), requires_grad=True)
+    if args.optimizer == 'all':
+        optimizers = ['sgd', 'momentum', 'adam']
+    elif args.optimizer == 'sgd':
+        optimizers = ['sgd']
+    elif args.optimizer == 'adam':
+        optimizers = ['adam']
+    elif args.optimizer == 'momentum':
+        optimizers = ['momentum']
+    else:
+        raise NotImplementedError
 
     def fn(w):
 
@@ -31,25 +42,53 @@ def main():
         for g in optim.param_groups:
             g['lr'] = g['lr'] / np.sqrt(k)
 
-    # opt = torch.optim.SGD([w], lr=0.01)
-    # opt = torch.optim.Adam([w], lr=0.01)
-    opt = torch.optim.SGD([w], lr=0.01, momentum=0.9)
+    for name in optimizers:
+        
+        set_seed(args.seed)
+        w = torch.randn((2, ), requires_grad=True)
 
-    for i in range(5):
+        if name == 'sgd':
+            opt = torch.optim.SGD([w], lr=args.lr)
+        elif name == 'adam':
+            opt = torch.optim.Adam([w], lr=args.lr)
+        elif name == 'momentum':
+            opt = torch.optim.SGD([w], lr=args.lr, momentum=args.momentum)
+        else:
+            raise NotImplementedError
 
-        # lr decay
-        change_lr(opt, k=i+1)
+        losses = []
+        for i in range(5):
 
-        # zero grad
-        opt.zero_grad()
+            # lr decay
+            change_lr(opt, k=i+1)
 
-        # function
-        loss =  fn(w)
-        print(f'Iter : {i} -- Loss : {loss}')
+            # zero grad
+            opt.zero_grad()
 
-        loss.backward()
-        opt.step()
+            # function
+            loss =  fn(w)
+            print(f'Iter : {i} -- Loss : {loss}')
 
+            loss.backward()
+            opt.step()
+
+            losses.append(loss.item())
+
+        losses = np.log10(np.array(losses))
+        plt.plot(losses[np.logical_not(np.isnan(losses))], label=name)
+    
+    plt.legend()
+    plt.xlabel('Iteration')
+    plt.ylabel('Log10 Loss')
+    plt.show()
 
 if __name__ == '__main__':
-    main()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--lr', type=float, default=0.01)
+    parser.add_argument('--momentum', type=float, default=0.9)
+    parser.add_argument('--optimizer', type=str, default='all', choices=['sgd', 'adam', 'all'])
+    args = parser.parse_args()
+
+    main(args)
