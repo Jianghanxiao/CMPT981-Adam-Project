@@ -6,8 +6,7 @@ import torch
 import matplotlib.pyplot as plt
 
 import argparse
-from optmizer import Adam
-from optmizer import SGD
+from optmizer import Adam, SGD, MSGD
 
 def set_seed(seed=2021):
     random.seed(seed)
@@ -19,13 +18,13 @@ def set_seed(seed=2021):
 def main(args):
 
     if args.optimizer == 'all':
-        optimizers = ['sgd', 'momentum', 'adam']
+        optimizers = ['sgd', 'msgd', 'adam']
     elif args.optimizer == 'sgd':
         optimizers = ['sgd']
     elif args.optimizer == 'adam':
         optimizers = ['adam']
-    elif args.optimizer == 'momentum':
-        optimizers = ['momentum']
+    elif args.optimizer == 'msgd':
+        optimizers = ['msgd']
     else:
         raise NotImplementedError
 
@@ -53,8 +52,8 @@ def main(args):
             opt = SGD([w], lr=args.lr)
         elif name == 'adam':
             opt = Adam([w], lr=args.lr)
-        elif name == 'momentum':
-            opt = SGD([w], lr=args.lr, momentum=args.momentum)
+        elif name == 'msgd':
+            opt = MSGD([w], lr=args.lr)
         else:
             raise NotImplementedError
 
@@ -89,8 +88,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--momentum', type=float, default=0.9)
-    parser.add_argument('--optimizer', type=str, default='momentum', choices=['sgd', 'adam', 'all'])
+    parser.add_argument('--optimizer', type=str, default='msgd', choices=['sgd', 'adam', 'all'])
     args = parser.parse_args()
 
     main(args)

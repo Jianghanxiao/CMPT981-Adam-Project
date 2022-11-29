@@ -37,13 +37,11 @@ class SGD(Optimizer):
         The Nesterov version is analogously modified.
     """
 
-    def __init__(self, params, lr=required, momentum=0):
+    def __init__(self, params, lr=required, ):
         if lr is not required and lr < 0.0:
             raise ValueError("Invalid learning rate: {}".format(lr))
-        if momentum < 0.0:
-            raise ValueError("Invalid momentum value: {}".format(momentum))
 
-        defaults = dict(lr=lr, momentum=momentum)
+        defaults = dict(lr=lr)
         super(SGD, self).__init__(params, defaults)
 
     def __setstate__(self, state):
@@ -60,20 +58,10 @@ class SGD(Optimizer):
             loss = closure()
 
         for group in self.param_groups:
-            momentum = group['momentum']
-
             for p in group['params']:
                 if p.grad is None:
                     continue
                 d_p = p.grad.data
-                if momentum != 0:
-                    param_state = self.state[p]
-                    if 'momentum_buffer' not in param_state:
-                        buf = param_state['momentum_buffer'] = torch.clone(d_p).detach()
-                    else:
-                        buf = param_state['momentum_buffer']
-                        buf.mul_(momentum).add_(d_p)
-                    d_p = buf
 
                 p.data.add_(-group['lr'], d_p)
 
