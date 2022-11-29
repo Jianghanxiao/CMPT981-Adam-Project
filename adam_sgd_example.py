@@ -90,7 +90,7 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--momentum', type=float, default=0.9)
-    parser.add_argument('--optimizer', type=str, default='adam', choices=['sgd', 'adam', 'all'])
+    parser.add_argument('--optimizer', type=str, default='momentum', choices=['sgd', 'adam', 'all'])
     args = parser.parse_args()
 
     main(args)
