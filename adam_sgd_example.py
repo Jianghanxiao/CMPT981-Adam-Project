@@ -6,7 +6,7 @@ import torch
 import matplotlib.pyplot as plt
 
 import argparse
-from optmizer import Adam, SGD, MSGD
+from optmizer import Adam, SGD, MSGD, MSVAG
 
 def set_seed(seed=2021):
     random.seed(seed)
@@ -18,13 +18,15 @@ def set_seed(seed=2021):
 def main(args):
 
     if args.optimizer == 'all':
-        optimizers = ['sgd', 'msgd', 'adam']
+        optimizers = ['sgd', 'msgd', 'adam', 'msvag']
     elif args.optimizer == 'sgd':
         optimizers = ['sgd']
     elif args.optimizer == 'adam':
         optimizers = ['adam']
     elif args.optimizer == 'msgd':
         optimizers = ['msgd']
+    elif args.optimizer == 'msvag':
+        optimizers = ['msvag']
     else:
         raise NotImplementedError
 
@@ -54,6 +56,8 @@ def main(args):
             opt = Adam([w], lr=args.lr)
         elif name == 'msgd':
             opt = MSGD([w], lr=args.lr)
+        elif name == 'msvag':
+            opt = MSVAG([w], lr=args.lr)
         else:
             raise NotImplementedError
 
@@ -88,7 +92,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--optimizer', type=str, default='msgd', choices=['sgd', 'adam', 'all'])
+    parser.add_argument('--optimizer', type=str, default='msvag', choices=['sgd', 'adam', 'all'])
     args = parser.parse_args()
 
     main(args)
