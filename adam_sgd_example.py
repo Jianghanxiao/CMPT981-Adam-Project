@@ -6,6 +6,8 @@ import torch
 import matplotlib.pyplot as plt
 
 import argparse
+from optmizer import Adam
+from optmizer import SGD
 
 def set_seed(seed=2021):
     random.seed(seed)
@@ -48,11 +50,11 @@ def main(args):
         w = torch.randn((2, ), requires_grad=True)
 
         if name == 'sgd':
-            opt = torch.optim.SGD([w], lr=args.lr)
+            opt = SGD([w], lr=args.lr)
         elif name == 'adam':
-            opt = torch.optim.Adam([w], lr=args.lr)
+            opt = Adam([w], lr=args.lr)
         elif name == 'momentum':
-            opt = torch.optim.SGD([w], lr=args.lr, momentum=args.momentum)
+            opt = SGD([w], lr=args.lr, momentum=args.momentum)
         else:
             raise NotImplementedError
 
@@ -88,7 +90,7 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--momentum', type=float, default=0.9)
-    parser.add_argument('--optimizer', type=str, default='all', choices=['sgd', 'adam', 'all'])
+    parser.add_argument('--optimizer', type=str, default='adam', choices=['sgd', 'adam', 'all'])
     args = parser.parse_args()
 
     main(args)
