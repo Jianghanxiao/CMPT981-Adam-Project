@@ -46,6 +46,5 @@ class MSGD(Optimizer):
                 step_size = group['lr'] / bias_correction
 
                 p.data.add_(-step_size, exp_avg)
-                torch.add
 
         return loss
