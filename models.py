@@ -19,12 +19,7 @@ class ConvNet(nn.Module):
     def forward(self, x):
         x = self.conv_net(x)
 
-        # See the CS231 link to understand why this is 16*5*5!
-        # This will help you design your own deeper network
         x = x.view(-1, 32*14*14)
         x = self.fc_net(x)
-
-        # No softmax is needed as the loss function in step 3
-        # takes care of that
 
         return F.log_softmax(x, dim=1)
