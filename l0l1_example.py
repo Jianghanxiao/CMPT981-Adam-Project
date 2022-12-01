@@ -49,7 +49,6 @@ def main(args):
         for g in optim.param_groups:
             g['lr'] = g['lr'] / np.sqrt(k)
 
-<<<<<<< Updated upstream
     def get_optimizer(w, name, lr):
         if name == 'sgd':
             opt = SGD([w], lr=lr)
@@ -161,57 +160,6 @@ def main(args):
     axis[1].set_ylabel('Log10 Smoothness')
 
     plt.show()
-=======
-    for name in optimizers:
-        for lr in [1e-1]:#[1e-7, 1e-6, 1e-5, 9e-4, 3e-4, 1e-4, 9e-3, 3e-3, 1e-3, 9e-2, 3e-2, 1e-2, 0.9, 0.3, 0.1, 1.]:
-            
-            print('\n\n------------------------')
-            print('LR: ', lr)
-
-            set_seed(args.seed)
-            w = torch.randn((2, ), requires_grad=True)
-
-            if name == 'sgd':
-                opt = SGD([w], lr=lr, stochastic=args.stochastic, noise_std=args.noise_std)
-            elif name == 'adam':
-                opt = Adam([w], lr=lr, stochastic=args.stochastic, noise_std=args.noise_std)
-            elif name == 'msgd':
-                opt = MSGD([w], lr=lr, stochastic=args.stochastic, noise_std=args.noise_std)
-            elif name == 'msvag':
-                opt = MSVAG([w], lr=lr, stochastic=args.stochastic, noise_std=args.noise_std)
-            elif name == 'mssd':
-                opt = MSSD([w], lr=lr, stochastic=args.stochastic, noise_std=args.noise_std)
-            else:
-                raise NotImplementedError
-
-            losses = []
-            for i in range(5):
-
-                # lr decay
-                if name == 'sgd':
-                    change_lr(opt, k=i+1)
-
-                # zero grad
-                opt.zero_grad()
-
-                # function
-                loss =  fn(w)
-                print(f'Iter : {i} -- Loss : {loss}')
-
-                loss.backward()
-
-                opt.step()
-
-                losses.append(loss.item())
-
-            losses = np.log10(np.array(losses))
-            plt.plot(losses[np.logical_not(np.isnan(losses))], label=name+f"_{lr}")
-        
-        plt.legend()
-        plt.xlabel('Iteration')
-        plt.ylabel('Log10 Loss')
-        plt.show()
->>>>>>> Stashed changes
 
 if __name__ == '__main__':
 
@@ -220,8 +168,6 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--iters', type=int, default=5)
     parser.add_argument('--optimizer', type=str, default='all', choices=['sgd', 'adam', 'msgd', 'mssd', 'msvag', 'all'])
-    parser.add_argument('--stochastic', action='store_true')
-    parser.add_argument('--noise_std', type=float, default=0.1)
     args = parser.parse_args()
 
     main(args)

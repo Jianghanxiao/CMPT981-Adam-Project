@@ -37,12 +37,15 @@ class SGD(Optimizer):
         The Nesterov version is analogously modified.
     """
 
-    def __init__(self, params, lr=required, ):
+    def __init__(self, params, lr=required, stochastic=False, noise_std=0.1):
         if lr is not required and lr < 0.0:
             raise ValueError("Invalid learning rate: {}".format(lr))
 
         defaults = dict(lr=lr)
         super(SGD, self).__init__(params, defaults)
+
+        self.stochastic = stochastic
+        self.noise_std = noise_std
 
     def __setstate__(self, state):
         super(SGD, self).__setstate__(state)
@@ -62,6 +65,9 @@ class SGD(Optimizer):
                 if p.grad is None:
                     continue
                 d_p = p.grad.data
+
+                if self.stochastic:
+                    d_p = d_p + torch.randn_like(d_p) * self.noise_std
 
                 p.data.add_(-group['lr'], d_p)
 

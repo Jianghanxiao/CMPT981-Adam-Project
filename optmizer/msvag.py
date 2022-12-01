@@ -24,12 +24,15 @@ class MSVAG(Optimizer):
         https://openreview.net/forum?id=ryQu7f-RZ
     """
 
-    def __init__(self, params, lr=1e-3, beta=0.9):
+    def __init__(self, params, lr=1e-3, beta=0.9, stochastic=False, noise_std=0.1):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
 
         defaults = dict(lr=lr, beta=beta)
         super(MSVAG, self).__init__(params, defaults)
+
+        self.stochastic = stochastic
+        self.noise_std = noise_std
 
     def __setstate__(self, state):
         super(MSVAG, self).__setstate__(state)
@@ -49,6 +52,10 @@ class MSVAG(Optimizer):
                 if p.grad is None:
                     continue
                 grad = p.grad.data
+
+                if self.stochastic:
+                    grad = grad + torch.randn_like(grad) * self.noise_std
+
                 if grad.is_sparse:
                     raise RuntimeError('Adam does not support sparse gradients, please consider SparseAdam instead')
 

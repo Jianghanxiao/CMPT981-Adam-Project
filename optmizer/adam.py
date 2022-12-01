@@ -24,7 +24,7 @@ class Adam(Optimizer):
         https://openreview.net/forum?id=ryQu7f-RZ
     """
 
-    def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-8):
+    def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-8, stochastic=False, noise_std=0.1):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:
@@ -35,6 +35,9 @@ class Adam(Optimizer):
             raise ValueError("Invalid beta parameter at index 1: {}".format(betas[1]))
         defaults = dict(lr=lr, betas=betas, eps=eps)
         super(Adam, self).__init__(params, defaults)
+
+        self.stochastic = stochastic
+        self.noise_std = noise_std
 
     def __setstate__(self, state):
         super(Adam, self).__setstate__(state)
@@ -54,6 +57,10 @@ class Adam(Optimizer):
                 if p.grad is None:
                     continue
                 grad = p.grad.data
+
+                if self.stochastic:
+                    grad = grad + torch.randn_like(grad) * self.noise_std
+
                 if grad.is_sparse:
                     raise RuntimeError('Adam does not support sparse gradients, please consider SparseAdam instead')
 
