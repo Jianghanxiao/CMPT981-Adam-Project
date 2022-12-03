@@ -128,7 +128,7 @@ def main(args):
 
     def eval_smooth(prev_model, model, name, lr, k, num_pts=1):
         alphas = np.arange(1, num_pts+1)/(num_pts+1)
-        gnorm, grad_ls = eval_grad(prev_model)
+        gnorm, grad_ls = eval_grad(prev_model, name, lr, k)
         update_size = norm_diff(get_model_params(model), get_model_params(prev_model))
         max_smooth = -1
         for alpha in alphas:
@@ -137,7 +137,7 @@ def main(args):
             for n, p in new_model.named_parameters():
                 p.data = alpha * p.data + (1-alpha) * {n:p for n, p in model.named_parameters()}[n].data
                 
-            eval_grad(new_model)
+            _, new_grad_ls = eval_grad(new_model, name, lr, k)
             smooth = norm_diff(get_model_grads(new_model), get_model_grads(prev_model))/ (update_size * (1- alpha))
             max_smooth = max(smooth, max_smooth)
         
@@ -172,7 +172,7 @@ def main(args):
             opt.step()
 
             losses.append(loss.item())
-            smoothness, fn_gradnorm = eval_smooth(prev_model, model, name, args.lr, i+1, num_pts=1)
+            smoothness, fn_gradnorm = eval_smooth(prev_model, model, name, args.lr, i+1, args.slice)
             grad_norm_ls.append(fn_gradnorm)
             smoothness_ls.append(smoothness)
 
@@ -201,6 +201,7 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--iters', type=int, default=5)
+    parser.add_argument('--slice', type=int, default=1)
     parser.add_argument('--optimizer', type=str, default='all', choices=['sgd', 'adam', 'msgd', 'mssd', 'msvag', 'all'])
     args = parser.parse_args()
 
