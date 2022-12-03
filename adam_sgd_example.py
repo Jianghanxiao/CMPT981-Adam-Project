@@ -63,7 +63,11 @@ def main(args):
                 print('LR: ', lr)
 
                 set_seed(seed)
-                w = torch.randn((2, ), requires_grad=True)
+                # check if init is not too close to optimum and not to close to overflow
+                while True:
+                    w = torch.randn((2, ), requires_grad=True)
+                    if fn(w) < 1e15 and fn(w) > 1e2:
+                        break
 
                 if name == 'sgd':
                     opt = SGD([w], lr=lr, stochastic=args.stochastic, noise_std=args.noise_std)
