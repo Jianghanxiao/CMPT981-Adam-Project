@@ -108,7 +108,7 @@ def main(args):
         assert len(list1) == len(list2)
         return math.sqrt(sum((list1[i]-list2[i]).norm()**2 for i in range(len(list1))))
 
-    figure, axis = plt.subplots(1, 2, figsize=(12, 5))
+    figure, axis = plt.subplots(1, 1, figsize=(6, 5))
 
     for name in optimizers:
         print(f'-----------------------------------')
@@ -142,22 +142,22 @@ def main(args):
             smoothness_ls.append(smoothness)
 
         losses = np.log10(np.array(losses))
-        axis[0].plot(losses[np.logical_not(np.isnan(losses))], label=name)
+        # axis[1].plot(losses[np.logical_not(np.isnan(losses))], label=name)
 
         grad_norm_ls = np.log10(np.array(grad_norm_ls))
         smoothness_ls = np.log10(np.array(smoothness_ls))
         
         if len(grad_norm_ls[np.logical_not(np.isnan(grad_norm_ls))]) == len(smoothness_ls[np.logical_not(np.isnan(smoothness_ls))]):
-            axis[1].scatter(grad_norm_ls[np.logical_not(np.isnan(grad_norm_ls))],
+            axis.scatter(grad_norm_ls[np.logical_not(np.isnan(grad_norm_ls))],
             smoothness_ls[np.logical_not(np.isnan(smoothness_ls))], label=name)
     
-    axis[0].legend()
-    axis[0].set_xlabel('Iteration')
-    axis[0].set_ylabel('Log10 Loss')
+    # axis[1].legend()
+    # axis[1].set_xlabel('Iteration')
+    # axis[1].set_ylabel('Log10 Loss')
 
-    axis[1].legend()
-    axis[1].set_xlabel('Log10 Grad Norm')
-    axis[1].set_ylabel('Log10 Smoothness')
+    axis.legend()
+    axis.set_xlabel('Log10 Grad Norm')
+    axis.set_ylabel('Log10 Smoothness')
 
     plt.show()
 

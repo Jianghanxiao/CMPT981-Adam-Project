@@ -143,7 +143,7 @@ def main(args):
         
         return max_smooth, gnorm
 
-    figure, axis = plt.subplots(1, 2, figsize=(12, 5))
+    # figure, axis = plt.subplots(1, 1, figsize=(7, 6))
     for name in optimizers:
         print(f'-----------------------------------')
         print(name.upper())
@@ -177,21 +177,31 @@ def main(args):
             smoothness_ls.append(smoothness)
 
         losses = np.log10(np.array(losses))
-        axis[0].plot(losses[np.logical_not(np.isnan(losses))], label=name)
+        # axis[0].plot(losses[np.logical_not(np.isnan(losses))], label=name)
 
         grad_norm_ls = np.log10(np.array(grad_norm_ls))
         smoothness_ls = np.log10(np.array(smoothness_ls))
+        # grad_norm_ls = np.array(grad_norm_ls)
+        # smoothness_ls = np.array(smoothness_ls)
         if len(grad_norm_ls[np.logical_not(np.isnan(grad_norm_ls))]) == len(smoothness_ls[np.logical_not(np.isnan(smoothness_ls))]):
-            axis[1].scatter(grad_norm_ls[np.logical_not(np.isnan(grad_norm_ls))],
+            no_inf_grad = grad_norm_ls[smoothness_ls!= float('inf')]
+            no_inf_smooth = smoothness_ls[smoothness_ls!= float('inf')]
+            # print(no_inf_grad, no_inf_smooth)
+            line = np.polyfit(no_inf_grad, no_inf_smooth, 1)
+            fit_line = np.poly1d(line)
+            plt.scatter(grad_norm_ls[np.logical_not(np.isnan(grad_norm_ls))],
             smoothness_ls[np.logical_not(np.isnan(smoothness_ls))], label=name)
+            step = (max(no_inf_grad) - min(no_inf_grad))/10
+            x_range = np.arange(min(no_inf_grad),max(no_inf_grad)+step,step)
+            plt.plot(x_range, fit_line(x_range), label=name)
 
-    axis[0].legend()
-    axis[0].set_xlabel('Iteration')
-    axis[0].set_ylabel('Log10 Loss')
+    # axis[0].legend()
+    # axis[0].set_xlabel('Iteration')
+    # axis[0].set_ylabel('Log10 Loss')
 
-    axis[1].legend()
-    axis[1].set_xlabel('Log10 Grad Norm')
-    axis[1].set_ylabel('Log10 Smoothness')
+    plt.legend()
+    plt.xlabel('Log10 Grad Norm')
+    plt.ylabel('Log10 Smoothness')
 
     plt.show()
 
