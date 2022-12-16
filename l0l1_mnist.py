@@ -145,52 +145,60 @@ def main(args):
 
     # figure, axis = plt.subplots(1, 1, figsize=(7, 6))
     for name in optimizers:
-        print(f'-----------------------------------')
-        print(name.upper())
-        set_seed(args.seed)
-        model = ConvNet(num_classes=10).cuda()
+        losses_avg = []
+        grad_norm_avg = []
+        smoothness_avg = []
+        for i in range(args.runs):
+            train_x, train_y = next(iter(trainloader))
+            train_x, train_y = train_x.cuda(), train_y.cuda()
+            set_seed(args.seed)
+            model = ConvNet(num_classes=10).cuda()
 
-        opt = get_optimizer(model, name, args.lr)
+            opt = get_optimizer(model, name, args.lr)
 
-        losses = []
-        grad_norm_ls = []
-        smoothness_ls = []
-        for i in range(args.iters):
-            prev_model = copy.deepcopy(model)
-            # lr decay
-            change_lr(opt, k=i + 1)
+            losses = []
+            grad_norm_ls = []
+            smoothness_ls = []
+            for i in range(args.iters):
+                prev_model = copy.deepcopy(model)
+                # lr decay
+                # change_lr(opt, k=i + 1)
 
-            # zero grad
-            opt.zero_grad()
+                # zero grad
+                opt.zero_grad()
 
-            # function
-            out = model(train_x)
-            loss = F.nll_loss(out, train_y)
-            print(f'Iter : {i} -- Loss : {loss}')
+                # function
+                out = model(train_x)
+                loss = F.nll_loss(out, train_y)
+                # print(f'Iter : {i} -- Loss : {loss}')
 
-            loss.backward()
-            opt.step()
+                loss.backward()
+                opt.step()
 
-            losses.append(loss.item())
-            smoothness, fn_gradnorm = eval_smooth(prev_model, model, name, args.lr, i+1, args.slice)
-            grad_norm_ls.append(fn_gradnorm)
-            smoothness_ls.append(smoothness)
+                losses.append(loss.item())
+                smoothness, fn_gradnorm = eval_smooth(prev_model, model, name, args.lr, i+1, args.slice)
+                grad_norm_ls.append(fn_gradnorm)
+                smoothness_ls.append(smoothness)
 
-        losses = np.log10(np.array(losses))
-        # axis[0].plot(losses[np.logical_not(np.isnan(losses))], label=name)
 
-        grad_norm_ls = np.log10(np.array(grad_norm_ls))
-        smoothness_ls = np.log10(np.array(smoothness_ls))
-        # grad_norm_ls = np.array(grad_norm_ls)
-        # smoothness_ls = np.array(smoothness_ls)
-        if len(grad_norm_ls[np.logical_not(np.isnan(grad_norm_ls))]) == len(smoothness_ls[np.logical_not(np.isnan(smoothness_ls))]):
-            no_inf_grad = grad_norm_ls[smoothness_ls!= float('inf')]
-            no_inf_smooth = smoothness_ls[smoothness_ls!= float('inf')]
+            losses_avg.append(losses)
+            # axis[1].plot(losses[np.logical_not(np.isnan(losses))], label=name)
+            
+            grad_norm_avg.append(grad_norm_ls)
+            smoothness_avg.append(smoothness_ls)
+        
+        losses_avg = np.log(np.mean(np.array(losses_avg), axis=0))
+        grad_norm_avg = np.log(np.mean(np.array(grad_norm_avg), axis=0))
+        smoothness_avg = np.log(np.mean(np.array(smoothness_avg), axis=0))
+        
+        if len(grad_norm_avg[np.logical_not(np.isnan(grad_norm_avg))]) == len(smoothness_avg[np.logical_not(np.isnan(smoothness_avg))]):
+            no_inf_grad = grad_norm_avg[smoothness_avg!= float('inf')]
+            no_inf_smooth = smoothness_avg[smoothness_avg!= float('inf')]
             # print(no_inf_grad, no_inf_smooth)
             line = np.polyfit(no_inf_grad, no_inf_smooth, 1)
             fit_line = np.poly1d(line)
-            plt.scatter(grad_norm_ls[np.logical_not(np.isnan(grad_norm_ls))],
-            smoothness_ls[np.logical_not(np.isnan(smoothness_ls))], label=name)
+            plt.scatter(grad_norm_avg[np.logical_not(np.isnan(grad_norm_avg))],
+            smoothness_avg[np.logical_not(np.isnan(smoothness_avg))], label=name)
             step = (max(no_inf_grad) - min(no_inf_grad))/10
             x_range = np.arange(min(no_inf_grad),max(no_inf_grad)+step,step)
             plt.plot(x_range, fit_line(x_range), label=name)
@@ -202,7 +210,7 @@ def main(args):
     plt.legend()
     plt.xlabel('Log10 Grad Norm')
     plt.ylabel('Log10 Smoothness')
-
+    plt.title(f'Average over {args.runs} runs of {args.iters} iterations')
     plt.show()
 
 
@@ -213,6 +221,7 @@ if __name__ == '__main__':
     parser.add_argument('--iters', type=int, default=5)
     parser.add_argument('--slice', type=int, default=1)
     parser.add_argument('--optimizer', type=str, default='all', choices=['sgd', 'adam', 'msgd', 'mssd', 'msvag', 'all'])
+    parser.add_argument('--runs', type=int, default=5)
     args = parser.parse_args()
 
     main(args)

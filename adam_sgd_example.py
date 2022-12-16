@@ -50,10 +50,13 @@ def main(args):
             g['lr'] = g['lr'] / np.sqrt(k)
 
     for name in optimizers:
-        for lr in [1e-1]:#[1e-7, 1e-6, 1e-5, 9e-4, 3e-4, 1e-4, 9e-3, 3e-3, 1e-3, 9e-2, 3e-2, 1e-2, 0.9, 0.3, 0.1, 1.]:
-            
+        figure, axis = plt.subplots(1, 2, figsize=(12, 5))
+        min_losses = []
+        min_gradnorm = []
+        for lr in [1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7]:
+            noise = args.noise_std if args.stochastic else 0
             print('\n\n------------------------')
-            print('LR: ', lr)
+            print(f'OPT: {name} - LR: {lr} - Noise: {noise}')
 
             set_seed(args.seed)
             w = torch.randn((2, ), requires_grad=True)
@@ -72,7 +75,8 @@ def main(args):
                 raise NotImplementedError
 
             losses = []
-            for i in range(5):
+            gnorm_ls = []
+            for i in range(args.iters):
 
                 # lr decay
                 if name == 'sgd':
@@ -83,7 +87,7 @@ def main(args):
 
                 # function
                 loss =  fn(w)
-                print(f'Iter : {i} -- Loss : {loss}')
+                # print(f'Iter : {i} -- Loss : {loss}')
 
                 loss.backward()
 
@@ -91,12 +95,37 @@ def main(args):
 
                 losses.append(loss.item())
 
+                gnorm = 0
+                grad_ls = []
+                for p in opt.param_groups[0]['params']:
+                    if p.grad is not None:
+                        param_norm = p.grad.data.norm(2)
+                        gnorm += param_norm.item() ** 2
+                        grad_ls.append(p.grad.data)
+                gnorm = gnorm ** (1. / 2)
+                gnorm_ls.append(gnorm)
+
+            min_losses.append(min(losses))
+            # print(f'Min loss: {min(losses)}')
             losses = np.log10(np.array(losses))
-            plt.plot(losses[np.logical_not(np.isnan(losses))], label=name+f"_{lr}")
+            axis[0].plot(losses[np.logical_not(np.isnan(losses))], label=name+f"_{lr}")
+            
+            min_gradnorm.append(min(gnorm_ls))
+            # print(f'Min gradnorm: {min(gnorm_ls)}')
+            gnorm_ls = np.log10(np.array(gnorm_ls))
+            axis[1].plot(gnorm_ls[np.logical_not(np.isnan(gnorm_ls))], label=name+f"_{lr}")
         
-        plt.legend()
-        plt.xlabel('Iteration')
-        plt.ylabel('Log10 Loss')
+        axis[0].legend()
+        axis[0].set_title(f'Log10 min Loss: {np.log(min(min_losses))}')
+        axis[0].set_xlabel('Iteration')
+        axis[0].set_ylabel('Log10 Loss')
+
+        axis[1].legend()
+        axis[1].set_title(f'Log10 min Grad Norm: {np.log(min(min_gradnorm))}')
+        axis[1].set_xlabel('Iteration')
+        axis[1].set_ylabel('Log10 Grad Norm')
+
+        figure.suptitle(f'{name} - noise: {noise}')
         plt.show()
 
 if __name__ == '__main__':

@@ -67,7 +67,7 @@ def main(args):
     def eval_grad(w, name, lr, k):
         
         opt = get_optimizer(w, name, lr)
-        change_lr(opt, k)
+        # change_lr(opt, k)
         
         opt.zero_grad()
         
@@ -111,45 +111,63 @@ def main(args):
     figure, axis = plt.subplots(1, 1, figsize=(6, 5))
 
     for name in optimizers:
-        print(f'-----------------------------------')
-        print(name.upper())
-        set_seed(args.seed)
-        w = torch.randn((2, ), requires_grad=True)
+        losses_avg = []
+        grad_norm_avg = []
+        smoothness_avg = []
+        seeds = [42,30,37,49,61,60]
+        for i in range(args.runs):
+            # print(f'-----------------------------------')
+            # print(name.upper())
+            # set_seed(args.seed)
+            set_seed(seeds[i])
+            w = torch.randn((2, ), requires_grad=True)
 
-        opt = get_optimizer(w, name, args.lr)
+            opt = get_optimizer(w, name, args.lr)
 
-        losses = []
-        grad_norm_ls = []
-        smoothness_ls = []
-        for i in range(args.iters):
-            prev_w = copy.deepcopy(w)
-            # lr decay
-            change_lr(opt, k=i+1)
+            losses = []
+            grad_norm_ls = []
+            smoothness_ls = []
+            for i in range(args.iters):
+                prev_w = copy.deepcopy(w)
+                # lr decay
+                # change_lr(opt, k=i+1)
 
-            # zero grad
-            opt.zero_grad()
+                # zero grad
+                opt.zero_grad()
 
-            # function
-            loss =  fn(w)
-            print(f'Iter : {i} -- Loss : {loss}')
+                # function
+                loss =  fn(w)
+                # print(f'Iter : {i} -- Loss : {loss}')
 
-            loss.backward()
-            opt.step()
+                loss.backward()
+                opt.step()
 
-            losses.append(loss.item())
-            smoothness, fn_gradnorm = eval_smooth(prev_w, w, name, args.lr, i+1, num_pts=1)
-            grad_norm_ls.append(fn_gradnorm)
-            smoothness_ls.append(smoothness)
+                losses.append(loss.item())
+                smoothness, fn_gradnorm = eval_smooth(prev_w, w, name, args.lr, i+1, num_pts=1)
+                grad_norm_ls.append(fn_gradnorm)
+                smoothness_ls.append(smoothness)
 
-        losses = np.log10(np.array(losses))
-        # axis[1].plot(losses[np.logical_not(np.isnan(losses))], label=name)
-
-        grad_norm_ls = np.log10(np.array(grad_norm_ls))
-        smoothness_ls = np.log10(np.array(smoothness_ls))
+            if not np.isnan(losses).any():
+                losses_avg.append(losses)
+            # axis[1].plot(losses[np.logical_not(np.isnan(losses))], label=name)
+            
+            if not np.isnan(grad_norm_ls).any():
+                grad_norm_avg.append(grad_norm_ls)
+            if not np.isnan(smoothness_ls).any():
+                smoothness_avg.append(smoothness_ls)
         
-        if len(grad_norm_ls[np.logical_not(np.isnan(grad_norm_ls))]) == len(smoothness_ls[np.logical_not(np.isnan(smoothness_ls))]):
-            axis.scatter(grad_norm_ls[np.logical_not(np.isnan(grad_norm_ls))],
-            smoothness_ls[np.logical_not(np.isnan(smoothness_ls))], label=name)
+        losses_avg = np.log(np.mean(np.array(losses_avg), axis=0))
+        grad_norm_avg = np.log(np.mean(np.array(grad_norm_avg), axis=0))
+        smoothness_avg = np.log(np.mean(np.array(smoothness_avg), axis=0))
+
+        print(f'{name.upper()}')
+        # print(f'Loss: {losses_avg[-10:]}')
+        # print(f'Grad: {grad_norm_avg[-10:]}')
+        # print(f'Smooth: {smoothness_avg[-10:]}')
+        # axis[1].plot(losses_avg[np.logical_not(np.isnan(losses_avg))], label=name)
+        if len(grad_norm_avg[np.logical_not(np.isnan(grad_norm_avg))]) == len(smoothness_avg[np.logical_not(np.isnan(smoothness_avg))]):
+            axis.scatter(grad_norm_avg[np.logical_not(np.isnan(grad_norm_avg))],
+            smoothness_avg[np.logical_not(np.isnan(smoothness_avg))], label=name)
     
     # axis[1].legend()
     # axis[1].set_xlabel('Iteration')
@@ -159,6 +177,7 @@ def main(args):
     axis.set_xlabel('Log10 Grad Norm')
     axis.set_ylabel('Log10 Smoothness')
 
+    figure.suptitle(f'Average over {args.runs} runs of {args.iters} iterations')
     plt.show()
 
 if __name__ == '__main__':
@@ -168,6 +187,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--iters', type=int, default=5)
     parser.add_argument('--optimizer', type=str, default='all', choices=['sgd', 'adam', 'msgd', 'mssd', 'msvag', 'all'])
+    parser.add_argument('--runs', type=int, default=5)
     args = parser.parse_args()
 
     main(args)
